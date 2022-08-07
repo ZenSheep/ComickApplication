@@ -127,6 +127,7 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
     final imageUrl = widget.comick.getImageUrl();
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.94,
+      height: MediaQuery.of(context).size.width * 0.28,
       child: Card(
         color: const Color(0x00fafafa),
         elevation: 0,
@@ -162,59 +163,37 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
                   : null,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 5.0),
-              child: Row(
-                children: <Widget>[
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.67,
-                        height: MediaQuery.of(context).size.width * 0.14,
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 2.0),
-                          child: Align(
-                            alignment: Alignment.bottomLeft,
-                            child: Text(
-                              widget.comick.title,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
-                            ),
-                          ),
-                        ),
+            Expanded(child: Padding(
+                padding: const EdgeInsets.only(left: 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      widget.comick.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.67,
-                        height: MediaQuery.of(context).size.width * 0.14,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 2.0),
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              "Rating: ${widget.comick.rating ?? ''}",
-                              style: const TextStyle(
-                                fontSize: 14,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "Rating: ${widget.comick.rating ?? ''}",
+                      style: const TextStyle(
+                        fontSize: 14,
                       ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: const [
-                      Icon(Icons.arrow_forward_ios)
-                    ],
-                  )
-                ],
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.only(right: 10.0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Icon(Icons.arrow_forward_ios)
               ),
             ),
           ],
