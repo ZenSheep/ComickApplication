@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   english_words: ^4.0.0
   http: ^0.13.5
+  flag: ^6.0.0
+  time_machine: ^0.9.17
+  pager: ^0.0.4
 
 dev_dependencies:
   flutter_test:

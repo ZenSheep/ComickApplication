@@ -47,6 +47,7 @@ class _CustomScaffoldState extends State<CustomScaffold> {
     return Scaffold(
       appBar: AppBar(  
         title: const Text('Comick Application V1.0'),
+        centerTitle: true,
       ),
       body: const SearchMainWidget(),
       bottomNavigationBar: BottomNavigationBar(
