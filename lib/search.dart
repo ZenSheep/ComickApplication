@@ -1,4 +1,5 @@
-import 'package:comick_application/requests/Models/comickModel.dart';
+import 'package:comick_application/comick.dart';
+import 'package:comick_application/requests/Models/comick_model.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
 
@@ -128,75 +129,85 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.94,
       height: MediaQuery.of(context).size.width * 0.28,
-      child: Card(
-        color: const Color(0x00fafafa),
-        elevation: 0,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(2.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: MediaQuery.of(context).size.width * 0.20,
-                  maxWidth: MediaQuery.of(context).size.width * 0.20,
-                  minHeight: MediaQuery.of(context).size.width * 0.28,
-                  maxHeight: MediaQuery.of(context).size.width * 0.28,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => ComickMainWidget(comick: widget.comick),
+              ),
+            );
+        },
+        child: Card(
+          color: const Color(0x00fafafa),
+          elevation: 0,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: MediaQuery.of(context).size.width * 0.20,
+                    maxWidth: MediaQuery.of(context).size.width * 0.20,
+                    minHeight: MediaQuery.of(context).size.width * 0.28,
+                    maxHeight: MediaQuery.of(context).size.width * 0.28,
+                  ),
+                  child: imageUrl != null ?
+                    Image.network(
+                      imageUrl,
+                      fit: BoxFit.fill,
+                      loadingBuilder: (BuildContext context, Widget child,
+                          ImageChunkEvent? loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                          ),
+                        );
+                      },
+                    )
+                    : null,
                 ),
-                child: imageUrl != null ?
-                  Image.network(
-                    imageUrl,
-                    fit: BoxFit.fill,
-                    loadingBuilder: (BuildContext context, Widget child,
-                        ImageChunkEvent? loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
+              ),
+              Expanded(child: Padding(
+                  padding: const EdgeInsets.only(left: 10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        widget.comick.title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                      );
-                    },
-                  )
-                  : null,
-              ),
-            ),
-            Expanded(child: Padding(
-                padding: const EdgeInsets.only(left: 10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      widget.comick.title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "Rating: ${widget.comick.rating ?? ''}",
-                      style: const TextStyle(
-                        fontSize: 14,
+                      const SizedBox(height: 10),
+                      Text(
+                        "Rating: ${widget.comick.rating ?? ''}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(right: 10.0),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Icon(Icons.arrow_forward_ios)
+              const Padding(
+                padding: EdgeInsets.only(right: 10.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Icon(Icons.arrow_forward_ios)
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
