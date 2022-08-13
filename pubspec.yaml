@@ -39,6 +39,7 @@ dependencies:
   flag: ^6.0.0
   time_machine: ^0.9.17
   pager: ^0.0.4
+  shared_preferences: ^2.0.15
 
 dev_dependencies:
   flutter_test:

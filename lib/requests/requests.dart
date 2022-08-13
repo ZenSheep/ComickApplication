@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:comick_application/requests/Models/chapters_model.dart';
 import 'package:comick_application/requests/Models/comick_model.dart';
+import 'package:comick_application/requests/Models/pages_model.dart';
 import 'package:http/http.dart' as http;
 
 Future<List<Comick>> getComicsByName(String? value) async {
@@ -23,6 +24,17 @@ Future<Chapters> getChaptersFromId(int id, int value) async{
   if (response.statusCode == 200) {
     final jsonResponse = json.decode(response.body);
     return Chapters.fromJson(jsonResponse);
+  } else {
+    throw Exception('Failed to load comick');
+  }
+}
+
+Future<Pages> getPagesFromHid(String hid) async{
+  final response = await http.get(Uri.https('api.comick.fun', '/chapter/$hid'));
+  
+  if (response.statusCode == 200) {
+    final jsonResponse = json.decode(response.body);
+    return Pages.fromJson(jsonResponse);
   } else {
     throw Exception('Failed to load comick');
   }
