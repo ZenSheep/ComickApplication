@@ -42,7 +42,7 @@ class Comick {
     if (mdCovers.isEmpty) {
       return null;
     }
-    return 'https://meo.comick.pictures/${mdCovers.first.b2key}';
+    return mdCovers.first.getImageUrl();
   }
 }
 
@@ -66,6 +66,10 @@ class MdCover {
       vol: json["vol"],
       w: json["w"],
     );
+  }
+
+  String getImageUrl() {
+    return 'https://meo.comick.pictures/${b2key}';
   }
 }
 

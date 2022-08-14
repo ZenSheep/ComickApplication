@@ -40,6 +40,9 @@ dependencies:
   time_machine: ^0.9.17
   pager: ^0.0.4
   shared_preferences: ^2.0.15
+  path: ^1.8.1
+  path_provider: ^2.0.11
+  percent_indicator: ^4.2.2
 
 dev_dependencies:
   flutter_test:

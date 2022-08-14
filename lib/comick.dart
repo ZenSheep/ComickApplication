@@ -1,11 +1,18 @@
+import 'dart:io';
+
 import 'package:comick_application/chapter.dart';
 import 'package:comick_application/requests/Models/chapters_model.dart';
 import 'package:comick_application/requests/Models/comick_model.dart';
 import 'package:comick_application/requests/requests.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flag/flag.dart';
 import 'package:pager/pager.dart';
+import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:path/path.dart' as path;
+
 
 
 class ComickMainWidget extends StatefulWidget {
@@ -120,7 +127,7 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
                     itemCount: snapshot.data!.chapters.length,
                     itemBuilder: (context, index) {
                       final chapter = snapshot.data!.chapters[index];
-                      return ChapterCustomCard(chapter: chapter);
+                      return ChapterCustomCard(chapter: chapter, slug: widget.comick.slug);
                     },
                     separatorBuilder: (context, index) {
                       return const Divider();
@@ -166,14 +173,34 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
 
 class ChapterCustomCard extends StatefulWidget {
   final Chapter chapter;
+  final String slug;
 
-  const ChapterCustomCard({Key? key, required this.chapter}) : super(key: key);
+  const ChapterCustomCard({Key? key, required this.chapter, required this.slug}) : super(key: key);
 
   @override
   State<ChapterCustomCard> createState() => _ChapterCustomCardState();
 }
 
 class _ChapterCustomCardState extends State<ChapterCustomCard> {
+  var _downloading = 0;
+  var _percent = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb)
+    {
+      path_provider.getApplicationDocumentsDirectory().then((value) {
+        final directoryPath = path.join(value.path, 'downloads', widget.slug, '${widget.chapter.chap} - ${widget.chapter.groupName}');
+        if (Directory(directoryPath).existsSync()) {
+          setState(() {
+            _downloading = 2;
+          });
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -187,14 +214,14 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
               ),
             );
         },
-          child: Card(
+        child: Card(
           color: const Color(0x00fafafa),
           elevation: 0,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Expanded(
-                flex: 3,
+                flex: 2,
                 child: Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: RichText(
@@ -215,50 +242,101 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
               ),
               Expanded(
                 flex: 2,
-                child: Row(
+                child: Column(
                   children: [
-                    const Icon(Icons.arrow_upward),
-                    Text("${widget.chapter.upCount}", style: const TextStyle(fontSize: 12)),
+                    Row(
+                      children: [
+                        const Icon(Icons.arrow_upward),
+                        const SizedBox( width: 5,),
+                        Text("${widget.chapter.upCount}"),
+                      ],
+                    ),
+                    const SizedBox( height: 10),
+                    Row(
+                      children: [
+                        const Icon(Icons.update),
+                        const SizedBox( width: 5,),
+                        Text(widget.chapter.getCreatedDate()),
+                      ],
+                    ),
                   ],
-                ),
+                )
               ),
               Expanded(
                 flex: 3,
-                child: Row(
+                child: Column(
                   children: [
-                    const Icon(Icons.update),
-                    const SizedBox( width: 5,),
-                    Text(widget.chapter.getCreatedDate()),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.group),
+                        const SizedBox( width: 5,),
+                        Flexible(
+                          child: Text(widget.chapter.groupName ?? "unknow", textAlign: TextAlign.start,),
+                        ),
+                      ],
+                    ),
+                    const SizedBox( height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 30,
+                          height: 20,
+                          child: Flag.fromString(widget.chapter.getFlagCode(), borderRadius: 8,),
+                        ),
+                      ],
+                    ),
                   ],
-                ),
+                )
               ),
               Expanded(
                 flex: 1,
-                child: Row(
+                child: ButtonBar(
+                  alignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(
-                      width: 30,
-                      height: 20,
-                      child: Flag.fromString(widget.chapter.getFlagCode(), borderRadius: 8,),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Flexible(
-                        child: Text(widget.chapter.groupName ?? "unknow", textAlign: TextAlign.end,),
-                      ),
-                    const SizedBox( width: 5,),
+                    _downloading == 1 ?
+                    CircularPercentIndicator(
+                      radius: 25.0,
+                      percent: _percent,
+                      center: Text("${(_percent * 100).toInt()}%"),
+                      progressColor: Colors.green,
+                    )
+                    : _downloading == 0 ?
+                    IconButton(
+                      icon: const Icon(Icons.file_download),
+                      onPressed: kIsWeb ? null
+                      : () {
+                        setState(() {
+                          _downloading = 1;
+                        });
+                        downloadChapter(widget.chapter.hid).forEach((element) { 
+                          setState(() {
+                            if (element == -1)
+                            {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) => const AlertDialog(title: Text("Error during download"))
+                              );
+                              _downloading = 0;
+                              _percent = 0.0;
 
-                      const Icon(Icons.group),
-                    ],
-                  ),
+                            }
+                            else if (element == 1)
+                            {
+                              _downloading = 2;
+                              _percent = 0.0;
+                            }
+                            else
+                            {
+                              _percent = element;
+                            }
+                          });
+                        });
+                      },
+                    )
+                    : const Icon(Icons.check),
+                  ],
                 ),
               ),
             ],
