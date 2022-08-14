@@ -5,6 +5,8 @@
 import 'package:comick_application/search.dart';
 import 'package:flutter/material.dart';
 
+import 'downloaded_comic.dart';
+
 void main() {
   // SystemChrome.setSystemUIOverlayStyle(
   //   const SystemUiOverlayStyle(systemNavigationBarColor: Colors.green),
@@ -34,6 +36,7 @@ class MyApp extends StatelessWidget {
 
 
 class CustomScaffold extends StatefulWidget {
+  
   const CustomScaffold({Key? key}) : super(key: key);
 
   @override
@@ -41,6 +44,7 @@ class CustomScaffold extends StatefulWidget {
 }
 
 class _CustomScaffoldState extends State<CustomScaffold> {
+  var _currentPage = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +53,7 @@ class _CustomScaffoldState extends State<CustomScaffold> {
         title: const Text('Comick Application V1.0'),
         centerTitle: true,
       ),
-      body: const SearchMainWidget(),
+      body: _currentPage == 0 ? const SearchMainWidget() : const DownloadedComicMainWidget(),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -61,6 +65,12 @@ class _CustomScaffoldState extends State<CustomScaffold> {
             label: 'Account',
           ),
         ],
+        currentIndex: _currentPage,
+        onTap: ((value) {
+          setState(() {
+            _currentPage = value;
+          });
+        }),
         // currentIndex: _selectedIndex,
         selectedItemColor: Colors.pink,
         // onTap: _onItemTapped,

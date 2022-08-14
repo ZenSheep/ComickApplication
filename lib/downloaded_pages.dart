@@ -1,29 +1,54 @@
-import 'dart:async';
+import 'dart:io';
 
-import 'package:comick_application/requests/Models/chapters_model.dart';
-import 'package:comick_application/requests/Models/pages_model.dart';
+import 'package:comick_application/downloaded_chapter.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/src/foundation/key.dart';
+import 'package:flutter/src/widgets/framework.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:path/path.dart' as path;
 
 
-class ChapterMainWidget extends StatefulWidget {
-  final Chapter chapter;
-
-  const ChapterMainWidget({Key? key, required this.chapter}) : super(key: key);
+class DownloadedPagesMainWidget extends StatefulWidget {
+  final DownloadedChapter chapter;
+  const DownloadedPagesMainWidget({Key? key, required this.chapter}) : super(key: key);
 
   @override
-  State<ChapterMainWidget> createState() => _ChapterMainWidgetState();
+  State<DownloadedPagesMainWidget> createState() => _DownloadedPagesMainWidgetState();
 }
 
-class _ChapterMainWidgetState extends State<ChapterMainWidget> {
-  late Future<Pages> pages;
+class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
+  late Future<List<String>> pages;
+  List<String> _chapters = [];
+  int? _currentIndex;
+  late Directory _chaptersDirectory;
 
   @override
   void initState() {
     super.initState();
-    pages = getPagesFromHid(widget.chapter.hid);
-
+    pages = getDownloadPath(widget.chapter.comicSlug, widget.chapter.groupSlug).then(((value) async {
+      var list = <String>[];
+      final downloadsDirectory = Directory(path.join(value, widget.chapter.chap));
+      if (downloadsDirectory.existsSync())
+      {
+        for (var elt in downloadsDirectory.listSync()) {
+          list.add(elt.path);
+        }
+      }
+      final chaptersDirectory = Directory(value);
+      if (chaptersDirectory.existsSync())
+      {
+        final chaptersList = chaptersDirectory.listSync().map((e) => path.basename(e.path)).toList();
+        chaptersList.sort((a, b) => a.compareTo(b));
+        final chapterIndex = chaptersList.indexOf(widget.chapter.chap);
+        setState(() {
+          _currentIndex = chapterIndex;
+          _chapters = chaptersList;
+          _chaptersDirectory = chaptersDirectory;
+        });
+      }
+      return list;
+    }));
   }
 
   @override
@@ -35,7 +60,7 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
           Column(
             children: [
               Expanded(
-                child: FutureBuilder<Pages>(
+                child: FutureBuilder<List<String>>(
                   future: pages,
                   builder: (context, snapshot) {
                     if (snapshot.hasData && snapshot.data != null) {
@@ -45,13 +70,13 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
                           ListView.builder(
                             shrinkWrap: true,
                             physics: const ScrollPhysics(),
-                            itemCount: data.chapter.mdImages.length,
+                            itemCount: data.length,
                             addAutomaticKeepAlives: false,
                             addRepaintBoundaries: false,
                             addSemanticIndexes: false,
                             itemBuilder: (context, index) {
-                              final page = data.chapter.mdImages[index];
-                              return ChapterCustomCard(page: page);
+                              final page = data[index];
+                              return DownloadedPagesCustomCard(page: page);
                             },
                           ),
                           Row(
@@ -61,9 +86,18 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
                                 child: Padding(
                                   padding: const EdgeInsets.only(left: 10, right: 10) ,
                                   child: ElevatedButton.icon(
-                                    onPressed: data.prev == null ? null : () {
+                                    onPressed: _currentIndex == null || _currentIndex! <= 0 ? null : () {
+                                      var list = <String>[];
+                                      final downloadsDirectory = Directory(path.join(_chaptersDirectory.path, _chapters[_currentIndex! - 1]));
+                                      if (downloadsDirectory.existsSync())
+                                      {
+                                        for (var elt in downloadsDirectory.listSync()) {
+                                          list.add(elt.path);
+                                        }
+                                      }
                                       setState(() {
-                                        pages = getPagesFromHid(data.prev!.hid);
+                                        pages = Future.value(list);
+                                        _currentIndex = _currentIndex! - 1;
                                       });
                                     },
                                     icon:const Icon(Icons.arrow_back_ios),
@@ -75,9 +109,18 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
                                 child: Padding(
                                   padding: const EdgeInsets.only(left: 10, right: 10),
                                   child: ElevatedButton.icon(
-                                    onPressed:  data.next == null ? null : () {
+                                    onPressed:  _currentIndex == null || _currentIndex! >=  _chapters.length - 1 ? null : () {
+                                      var list = <String>[];
+                                      final downloadsDirectory = Directory(path.join(_chaptersDirectory.path, _chapters[_currentIndex! + 1]));
+                                      if (downloadsDirectory.existsSync())
+                                      {
+                                        for (var elt in downloadsDirectory.listSync()) {
+                                          list.add(elt.path);
+                                        }
+                                      }
                                       setState(() {
-                                        pages = getPagesFromHid(data.next!.hid);
+                                        pages = Future.value(list);
+                                        _currentIndex = _currentIndex! + 1;
                                       });
                                     },
                                     icon:const Icon(Icons.arrow_forward_ios),
@@ -123,15 +166,15 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
   }
 }
 
-class ChapterCustomCard extends StatefulWidget {
-  final MdImage page;
-  const ChapterCustomCard({Key? key, required this.page}) : super(key: key);
+class DownloadedPagesCustomCard extends StatefulWidget {
+  final String page;
+  const DownloadedPagesCustomCard({Key? key, required this.page}) : super(key: key);
 
   @override
-  State<ChapterCustomCard> createState() => _ChapterCustomCardState();
+  State<DownloadedPagesCustomCard> createState() => _DownloadedPagesCustomCardState();
 }
 
-class _ChapterCustomCardState extends State<ChapterCustomCard> {
+class _DownloadedPagesCustomCardState extends State<DownloadedPagesCustomCard> {
   @override
   Widget build(BuildContext context) {
     final imageWidth = MediaQuery.of(context).size.width < 600 ? MediaQuery.of(context).size.width : 600;
@@ -144,20 +187,9 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
         children: [
           SizedBox(
             width: imageWidth.toDouble(),
-            child: Image.network(
-              widget.page.getImageUrl(),
+            child: Image.file(
+              File(widget.page),
               fit: BoxFit.fitWidth,
-              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                );
-              },
             ),
           ),
         ]

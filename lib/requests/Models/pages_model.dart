@@ -63,7 +63,7 @@ class ComickChapter {
  MdComics mdComics;
  List<MdImage> mdImages;
  String? mdid;
- int? mseid;
+ String? mseid;
  String? server;
  String? status;
  String? title;
@@ -278,7 +278,7 @@ class ChapterLangList {
 class Prev {
  String? chap;
  List<String> groupName;
- String? hid;
+ String hid;
  String? href;
  int id;
  String? lang;
