@@ -11,7 +11,9 @@ class Chapters {
 
   factory Chapters.fromJson(Map<String, dynamic> json) {
     return Chapters(
-      chapters: (json["chapters"] as List<dynamic>).map((e) => Chapter.fromJson(e)).toList(),
+      chapters: (json["chapters"] as List<dynamic>)
+          .map((e) => Chapter.fromJson(e))
+          .toList(),
       total: json["total"],
     );
   }
@@ -24,7 +26,7 @@ class Chapters {
 class Chapter {
   String chap;
   DateTime createdAt;
-  int downCount;
+  int? downCount;
   String? groupName;
   String hid;
   int id;
@@ -32,7 +34,7 @@ class Chapter {
   List<MdGroup> mdGroups;
   String? slug;
   String? title;
-  int upCount;
+  int? upCount;
   DateTime updatedAt;
   String? vol;
 
@@ -53,8 +55,9 @@ class Chapter {
   });
 
   factory Chapter.fromJson(Map<String, dynamic> json) {
-    final groupNames = (json["group_name"] as List<dynamic>);
-    
+    final groupNames =
+        json["group_name"] != null ? json["group_name"] as List<dynamic> : [];
+
     return Chapter(
       chap: json["chap"],
       createdAt: DateTime.parse(json["created_at"]),
@@ -63,7 +66,9 @@ class Chapter {
       hid: json["hid"],
       id: json["id"],
       lang: json["lang"],
-      mdGroups: (json["md_groups"] as List<dynamic>).map((e) => MdGroup.fromJson(e)).toList(),
+      mdGroups: (json["md_groups"] as List<dynamic>)
+          .map((e) => MdGroup.fromJson(e))
+          .toList(),
       slug: json["slug"],
       title: json["title"],
       upCount: json["up_count"],
@@ -94,8 +99,8 @@ class Chapter {
 }
 
 class MdGroup {
- String? slug;
- String? title;
+  String? slug;
+  String? title;
 
   MdGroup({
     required this.slug,

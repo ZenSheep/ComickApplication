@@ -1,18 +1,18 @@
 import 'dart:io';
 
 import 'package:comick_application/downloaded_chapter.dart';
-import 'package:comick_application/requests/Models/comic_informations_model.dart';
+import 'package:comick_application/requests/Models/comicInformationsModel.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as path;
 
-
 class DownloadedComicMainWidget extends StatefulWidget {
   const DownloadedComicMainWidget({Key? key}) : super(key: key);
 
   @override
-  State<DownloadedComicMainWidget> createState() => _DownloadedComicMainWidgetState();
+  State<DownloadedComicMainWidget> createState() =>
+      _DownloadedComicMainWidgetState();
 }
 
 class _DownloadedComicMainWidgetState extends State<DownloadedComicMainWidget> {
@@ -21,10 +21,10 @@ class _DownloadedComicMainWidgetState extends State<DownloadedComicMainWidget> {
   @override
   void initState() {
     super.initState();
-    comics = path_provider.getApplicationDocumentsDirectory().then(((value) async {
+    comics =
+        path_provider.getApplicationDocumentsDirectory().then(((value) async {
       final downloadsDirectory = Directory(path.join(value.path, 'downloads'));
-      if (downloadsDirectory.existsSync())
-      {
+      if (downloadsDirectory.existsSync()) {
         var list = <ComicInformations>[];
         for (var elt in downloadsDirectory.listSync()) {
           final comic = await getComicInformations(path.basename(elt.path));
@@ -57,12 +57,14 @@ class _DownloadedComicMainWidgetState extends State<DownloadedComicMainWidget> {
                 );
               } else if (snapshot.hasError) {
                 return Text("${snapshot.error}");
+              } else if (snapshot.hasData && snapshot.data!.isEmpty) {
+                return const Center(
+                  child: Text('No downloaded comic'),
+                );
               }
-              return const SizedBox(
-                height: 100,
-                width: 100,
-                child: Center(
-                  child: CircularProgressIndicator(color: Colors.pink,),
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.pink,
                 ),
               );
             },
@@ -92,11 +94,12 @@ class _DownloadedCustomCardState extends State<DownloadedCustomCard> {
       child: GestureDetector(
         onTap: () {
           Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => DownloadedChapterMainWidget(slug: widget.comic.comic.slug),
-              ),
-            );
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  DownloadedChapterMainWidget(slug: widget.comic.comic.slug),
+            ),
+          );
         },
         child: Card(
           color: const Color(0x00fafafa),
@@ -113,27 +116,29 @@ class _DownloadedCustomCardState extends State<DownloadedCustomCard> {
                     minHeight: MediaQuery.of(context).size.width * 0.28,
                     maxHeight: MediaQuery.of(context).size.width * 0.28,
                   ),
-                  child: imageUrl != null ?
-                    Image.network(
-                      imageUrl,
-                      fit: BoxFit.fill,
-                      loadingBuilder: (BuildContext context, Widget child,
-                          ImageChunkEvent? loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        );
-                      },
-                    )
-                    : null,
+                  child: imageUrl != null
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.fill,
+                          loadingBuilder: (BuildContext context, Widget child,
+                              ImageChunkEvent? loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                        )
+                      : null,
                 ),
               ),
-              Expanded(child: Padding(
+              Expanded(
+                child: Padding(
                   padding: const EdgeInsets.only(left: 10.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,9 +158,8 @@ class _DownloadedCustomCardState extends State<DownloadedCustomCard> {
               const Padding(
                 padding: EdgeInsets.only(right: 10.0),
                 child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Icon(Icons.arrow_forward_ios)
-                ),
+                    alignment: Alignment.centerRight,
+                    child: Icon(Icons.arrow_forward_ios)),
               ),
             ],
           ),

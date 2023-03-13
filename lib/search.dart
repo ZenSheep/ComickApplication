@@ -1,8 +1,9 @@
 import 'package:comick_application/comick.dart';
-import 'package:comick_application/requests/Models/comick_model.dart';
+import 'package:comick_application/requests/Models/IComicModel.dart';
+import 'package:comick_application/requests/Models/comicInformationsModel.dart';
+import 'package:comick_application/requests/Models/topComicModel.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
-
 
 class SearchMainWidget extends StatefulWidget {
   const SearchMainWidget({Key? key}) : super(key: key);
@@ -12,24 +13,32 @@ class SearchMainWidget extends StatefulWidget {
 }
 
 class _SearchMainWidgetState extends State<SearchMainWidget> {
-  late Future<List<Comick>> comicks;
+  late Future<List<IComic>> comicks;
   String _searchValue = "Solo Leveling";
 
   @override
   void initState() {
     super.initState();
-    comicks = getComicsByName(_searchValue);
+    comicks = getTopComics();
   }
 
-  void updateSearchValue (String value) {
+  void updateSearchValue(String value) {
     setState(() {
-      _searchValue = value.isEmpty ? "Solo Leveling" : value;
-      comicks = Future<List<Comick>>.value([]);
-      getComicsByName(_searchValue).then((value) {
-        setState(() {
-          comicks = Future<List<Comick>>.value(value);
+      _searchValue = value.isEmpty ? "" : value;
+      comicks = Future<List<IComic>>.value([]);
+      if (value.isEmpty) {
+        getTopComics().then((value) {
+          setState(() {
+            comicks = Future<List<TopComic>>.value(value);
+          });
         });
-      });
+      } else {
+        getComicsByName(_searchValue).then((value) {
+          setState(() {
+            comicks = Future<List<ComicInformation>>.value(value);
+          });
+        });
+      }
     });
   }
 
@@ -47,7 +56,7 @@ class _SearchMainWidgetState extends State<SearchMainWidget> {
         children: <Widget>[
           SearchBar(updateSearchValue: updateSearchValue),
           Expanded(
-            child: FutureBuilder<List<Comick>>(
+            child: FutureBuilder<List<Object>>(
               future: comicks,
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.isNotEmpty) {
@@ -55,7 +64,7 @@ class _SearchMainWidgetState extends State<SearchMainWidget> {
                     itemCount: snapshot.data!.length,
                     itemBuilder: (context, index) {
                       final comick = snapshot.data![index];
-                      return SearchCustomCard(comick: comick);
+                      return SearchCustomCard(comick: comick as IComic);
                     },
                     separatorBuilder: (context, index) {
                       return const Divider();
@@ -68,7 +77,9 @@ class _SearchMainWidgetState extends State<SearchMainWidget> {
                   height: 100,
                   width: 100,
                   child: Center(
-                    child: CircularProgressIndicator(color: Colors.pink,),
+                    child: CircularProgressIndicator(
+                      color: Colors.pink,
+                    ),
                   ),
                 );
               },
@@ -83,14 +94,14 @@ class _SearchMainWidgetState extends State<SearchMainWidget> {
 class SearchBar extends StatefulWidget {
   final ValueChanged<String> updateSearchValue;
 
-  const SearchBar({Key? key, required this.updateSearchValue}) : super(key: key);
+  const SearchBar({Key? key, required this.updateSearchValue})
+      : super(key: key);
 
   @override
   State<SearchBar> createState() => _SearchBarState();
 }
 
 class _SearchBarState extends State<SearchBar> {
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -102,7 +113,9 @@ class _SearchBarState extends State<SearchBar> {
           hintText: 'Search...',
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.pink,),
+            borderSide: const BorderSide(
+              color: Colors.pink,
+            ),
           ),
         ),
         onSubmitted: (value) {
@@ -114,7 +127,7 @@ class _SearchBarState extends State<SearchBar> {
 }
 
 class SearchCustomCard extends StatefulWidget {
-  final Comick comick;
+  final IComic comick;
 
   const SearchCustomCard({Key? key, required this.comick}) : super(key: key);
 
@@ -130,13 +143,26 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
       width: MediaQuery.of(context).size.width * 0.94,
       height: MediaQuery.of(context).size.width * 0.28,
       child: GestureDetector(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          var comic = widget.comick;
+          if (comic is ComicInformation) {
+            Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => ComickMainWidget(comick: widget.comick),
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    ComickMainWidget(comick: comic),
               ),
             );
+          } else {
+            getComicInformations(widget.comick.slug)
+                .then((value) => Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            ComickMainWidget(comick: value.comic),
+                      ),
+                    ));
+          }
         },
         child: Card(
           color: const Color(0x00fafafa),
@@ -153,27 +179,29 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
                     minHeight: MediaQuery.of(context).size.width * 0.28,
                     maxHeight: MediaQuery.of(context).size.width * 0.28,
                   ),
-                  child: imageUrl != null ?
-                    Image.network(
-                      imageUrl,
-                      fit: BoxFit.fill,
-                      loadingBuilder: (BuildContext context, Widget child,
-                          ImageChunkEvent? loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        );
-                      },
-                    )
-                    : null,
+                  child: imageUrl != null
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.fill,
+                          loadingBuilder: (BuildContext context, Widget child,
+                              ImageChunkEvent? loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                        )
+                      : null,
                 ),
               ),
-              Expanded(child: Padding(
+              Expanded(
+                child: Padding(
                   padding: const EdgeInsets.only(left: 10.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +216,7 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        "Rating: ${widget.comick.rating ?? ''}",
+                        "Rating: ${widget.comick.getRate()}",
                         style: const TextStyle(
                           fontSize: 14,
                         ),
@@ -202,9 +230,8 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
               const Padding(
                 padding: EdgeInsets.only(right: 10.0),
                 child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Icon(Icons.arrow_forward_ios)
-                ),
+                    alignment: Alignment.centerRight,
+                    child: Icon(Icons.arrow_forward_ios)),
               ),
             ],
           ),

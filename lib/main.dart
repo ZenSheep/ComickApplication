@@ -22,21 +22,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Startup Name Generator',
-      theme: ThemeData(          // Add the 5 lines from here... 
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-        ),
-      ),
-
+      // theme: ThemeData(
+      //   // Add the 5 lines from here...
+      //   appBarTheme: const AppBarTheme(
+      //     backgroundColor: Colors.white,
+      //     foregroundColor: Colors.black,
+      //   ),
+      // ),
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      themeMode: ThemeMode.dark,
       home: const CustomScaffold(),
     );
   }
 }
 
-
 class CustomScaffold extends StatefulWidget {
-  
   const CustomScaffold({Key? key}) : super(key: key);
 
   @override
@@ -49,11 +50,13 @@ class _CustomScaffoldState extends State<CustomScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(  
+      appBar: AppBar(
         title: const Text('Comick Application V1.0'),
         centerTitle: true,
       ),
-      body: _currentPage == 0 ? const SearchMainWidget() : const DownloadedComicMainWidget(),
+      body: _currentPage == 0
+          ? const SearchMainWidget()
+          : const DownloadedComicMainWidget(),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

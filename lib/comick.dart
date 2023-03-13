@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:comick_application/chapter.dart';
-import 'package:comick_application/requests/Models/chapters_model.dart';
-import 'package:comick_application/requests/Models/comick_model.dart';
+import 'package:comick_application/requests/Models/chaptersModel.dart';
+import 'package:comick_application/requests/Models/comicInformationsModel.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,10 +13,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as path;
 
-
-
 class ComickMainWidget extends StatefulWidget {
-  final Comick comick;
+  final ComicInformation comick;
 
   const ComickMainWidget({Key? key, required this.comick}) : super(key: key);
 
@@ -34,14 +32,15 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
   @override
   void initState() {
     super.initState();
-    chapters = getChaptersFromId(widget.comick.id, _currentPage);
+    var comic = widget.comick;
+    chapters = getChaptersFromId(comic.id, _currentPage);
     chapters.then((value) => setState(() {
-      _totalPages = value.getNumberOfPages();
-    }));
+          _totalPages = value.getNumberOfPages();
+        }));
     _preferences = SharedPreferences.getInstance();
     _preferences.then((value) => setState(() {
-      _favorite = value.getInt(widget.comick.id.toString()) != null;
-    }));
+          _favorite = value.getInt(widget.comick.slug) != null;
+        }));
   }
 
   @override
@@ -49,7 +48,7 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
     final imageUrl = widget.comick.getImageUrl();
 
     return Scaffold(
-      appBar: AppBar(  
+      appBar: AppBar(
         title: Text(widget.comick.title),
         centerTitle: true,
       ),
@@ -61,23 +60,24 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
               SizedBox(
                 height: 300,
                 width: 225,
-                child: imageUrl != null ?
-                Image.network(
-                  imageUrl,
-                  fit: BoxFit.fill,
-                  loadingBuilder: (BuildContext context, Widget child,
-                      ImageChunkEvent? loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
-                    );
-                  },
-                ) : null,
+                child: imageUrl != null
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.fill,
+                        loadingBuilder: (BuildContext context, Widget child,
+                            ImageChunkEvent? loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                      )
+                    : null,
               ),
               FutureBuilder<SharedPreferences>(
                 future: _preferences,
@@ -87,13 +87,14 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
                       alignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          icon: Icon(_favorite ? Icons.favorite : Icons.favorite_border),
+                          icon: Icon(_favorite
+                              ? Icons.favorite
+                              : Icons.favorite_border),
                           onPressed: () {
                             if (_favorite) {
-                              snapshot.data!.remove(widget.comick.id.toString());
-                            }
-                            else {
-                              snapshot.data!.setInt(widget.comick.id.toString(), 1);
+                              snapshot.data!.remove(widget.comick.slug);
+                            } else {
+                              snapshot.data!.setInt(widget.comick.slug, 1);
                             }
                             setState(() {
                               _favorite = !_favorite;
@@ -110,7 +111,9 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
                       height: 100,
                       width: 100,
                       child: Center(
-                        child: CircularProgressIndicator(color: Colors.pink,),
+                        child: CircularProgressIndicator(
+                          color: Colors.pink,
+                        ),
                       ),
                     ),
                   );
@@ -127,7 +130,8 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
                     itemCount: snapshot.data!.chapters.length,
                     itemBuilder: (context, index) {
                       final chapter = snapshot.data!.chapters[index];
-                      return ChapterCustomCard(chapter: chapter, slug: widget.comick.slug);
+                      return ChapterCustomCard(
+                          chapter: chapter, slug: widget.comick.slug);
                     },
                     separatorBuilder: (context, index) {
                       return const Divider();
@@ -141,7 +145,9 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
                     height: 100,
                     width: 100,
                     child: Center(
-                      child: CircularProgressIndicator(color: Colors.pink,),
+                      child: CircularProgressIndicator(
+                        color: Colors.pink,
+                      ),
                     ),
                   ),
                 );
@@ -153,10 +159,13 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
             totalPages: _totalPages,
             numberButtonSelectedColor: Colors.pink,
             pagesView: 3,
+            numberTextSelectedColor: Colors.white,
+            numberTextUnselectedColor: Colors.white,
             onPageChanged: (page) {
               setState(() {
                 _currentPage = page;
-                chapters = Future<Chapters>.value(Chapters(chapters: [], total: 0));
+                chapters =
+                    Future<Chapters>.value(Chapters(chapters: [], total: 0));
                 getChaptersFromId(widget.comick.id, _currentPage).then((value) {
                   setState(() {
                     chapters = Future<Chapters>.value(value);
@@ -175,7 +184,8 @@ class ChapterCustomCard extends StatefulWidget {
   final Chapter chapter;
   final String slug;
 
-  const ChapterCustomCard({Key? key, required this.chapter, required this.slug}) : super(key: key);
+  const ChapterCustomCard({Key? key, required this.chapter, required this.slug})
+      : super(key: key);
 
   @override
   State<ChapterCustomCard> createState() => _ChapterCustomCardState();
@@ -188,10 +198,10 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
   @override
   void initState() {
     super.initState();
-    if (!kIsWeb)
-    {
+    if (!kIsWeb) {
       path_provider.getApplicationDocumentsDirectory().then((value) {
-        final directoryPath = path.join(value.path, 'downloads', widget.slug, '${widget.chapter.chap} - ${widget.chapter.groupName}');
+        final directoryPath = path.join(value.path, 'downloads', widget.slug,
+            '${widget.chapter.chap} - ${widget.chapter.groupName}');
         if (Directory(directoryPath).existsSync()) {
           setState(() {
             _downloading = 2;
@@ -208,11 +218,12 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
       child: GestureDetector(
         onTap: () {
           Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => ChapterMainWidget(chapter: widget.chapter),
-              ),
-            );
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  ChapterMainWidget(chapter: widget.chapter),
+            ),
+          );
         },
         child: Card(
           color: const Color(0x00fafafa),
@@ -228,114 +239,129 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
                     text: TextSpan(
                       style: const TextStyle(
                         fontSize: 12.0,
-                        color: Colors.black,
                       ),
                       children: <TextSpan>[
-                        TextSpan(text: 'CH. ${widget.chapter.chap} ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        if (widget.chapter.vol != null || widget.chapter.title != null)
+                        TextSpan(
+                            text: 'CH. ${widget.chapter.chap} ',
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        if (widget.chapter.vol != null ||
+                            widget.chapter.title != null)
                           const TextSpan(text: '\n'),
-                        TextSpan(text: widget.chapter.vol != null ? "Vol. ${widget.chapter.vol} ${widget.chapter.title != null ? ' - ${widget.chapter.title}' : ''}" : widget.chapter.title ?? ''),
+                        TextSpan(
+                            text: widget.chapter.vol != null
+                                ? "Vol. ${widget.chapter.vol} ${widget.chapter.title != null ? ' - ${widget.chapter.title}' : ''}"
+                                : widget.chapter.title ?? ''),
                       ],
                     ),
                   ),
                 ),
               ),
               Expanded(
-                flex: 2,
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.arrow_upward),
-                        const SizedBox( width: 5,),
-                        Text("${widget.chapter.upCount}"),
-                      ],
-                    ),
-                    const SizedBox( height: 10),
-                    Row(
-                      children: [
-                        const Icon(Icons.update),
-                        const SizedBox( width: 5,),
-                        Text(widget.chapter.getCreatedDate()),
-                      ],
-                    ),
-                  ],
-                )
-              ),
+                  flex: 2,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.arrow_upward),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Text("${widget.chapter.upCount}"),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const Icon(Icons.update),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Text(widget.chapter.getCreatedDate()),
+                        ],
+                      ),
+                    ],
+                  )),
               Expanded(
-                flex: 3,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.group),
-                        const SizedBox( width: 5,),
-                        Flexible(
-                          child: Text(widget.chapter.groupName ?? "unknow", textAlign: TextAlign.start,),
-                        ),
-                      ],
-                    ),
-                    const SizedBox( height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 30,
-                          height: 20,
-                          child: Flag.fromString(widget.chapter.getFlagCode(), borderRadius: 8,),
-                        ),
-                      ],
-                    ),
-                  ],
-                )
-              ),
+                  flex: 3,
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.group),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Flexible(
+                            child: Text(
+                              widget.chapter.groupName ?? "unknow",
+                              textAlign: TextAlign.start,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 30,
+                            height: 20,
+                            child: Flag.fromString(
+                              widget.chapter.getFlagCode(),
+                              borderRadius: 8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )),
               Expanded(
                 flex: 1,
                 child: ButtonBar(
                   alignment: MainAxisAlignment.center,
                   children: [
-                    _downloading == 1 ?
-                    CircularPercentIndicator(
-                      radius: 25.0,
-                      percent: _percent,
-                      center: Text("${(_percent * 100).toInt()}%"),
-                      progressColor: Colors.green,
-                    )
-                    : _downloading == 0 ?
-                    IconButton(
-                      icon: const Icon(Icons.file_download),
-                      onPressed: kIsWeb ? null
-                      : () {
-                        setState(() {
-                          _downloading = 1;
-                        });
-                        downloadChapter(widget.chapter.hid).forEach((element) { 
-                          setState(() {
-                            if (element == -1)
-                            {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) => const AlertDialog(title: Text("Error during download"))
-                              );
-                              _downloading = 0;
-                              _percent = 0.0;
-
-                            }
-                            else if (element == 1)
-                            {
-                              _downloading = 2;
-                              _percent = 0.0;
-                            }
-                            else
-                            {
-                              _percent = element;
-                            }
-                          });
-                        });
-                      },
-                    )
-                    : const Icon(Icons.check),
+                    _downloading == 1
+                        ? CircularPercentIndicator(
+                            radius: 25.0,
+                            percent: _percent,
+                            center: Text("${(_percent * 100).toInt()}%"),
+                            progressColor: Colors.green,
+                          )
+                        : _downloading == 0
+                            ? IconButton(
+                                icon: const Icon(Icons.file_download),
+                                onPressed: kIsWeb
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          _downloading = 1;
+                                        });
+                                        downloadChapter(widget.chapter.hid)
+                                            .forEach((element) {
+                                          setState(() {
+                                            if (element == -1) {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (BuildContext
+                                                          context) =>
+                                                      const AlertDialog(
+                                                          title: Text(
+                                                              "Error during download")));
+                                              _downloading = 0;
+                                              _percent = 0.0;
+                                            } else if (element == 1) {
+                                              _downloading = 2;
+                                              _percent = 0.0;
+                                            } else {
+                                              _percent = element;
+                                            }
+                                          });
+                                        });
+                                      },
+                              )
+                            : const Icon(Icons.check),
                   ],
                 ),
               ),
