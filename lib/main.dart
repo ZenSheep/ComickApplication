@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:comick_application/search.dart';
+import 'package:comick_application/pages/search.dart';
 import 'package:flutter/material.dart';
 
-import 'downloaded_comic.dart';
+import 'pages/downloaded_comic.dart';
 
 void main() {
   // SystemChrome.setSystemUIOverlayStyle(

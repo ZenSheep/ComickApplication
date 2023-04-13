@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:comick_application/downloaded_pages.dart';
+import 'package:comick_application/pages/downloaded_pages.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
@@ -9,14 +9,16 @@ class DownloadedChapter {
   String chap;
   String comicSlug;
   String groupSlug;
+  String? title;
 
   DownloadedChapter(
-      {required this.chap, required this.comicSlug, required this.groupSlug});
+      {required this.chap, required this.comicSlug, required this.groupSlug, required this.title});
 }
 
 class DownloadedChapterMainWidget extends StatefulWidget {
   final String slug;
-  const DownloadedChapterMainWidget({Key? key, required this.slug})
+  final String? title;
+  const DownloadedChapterMainWidget({Key? key, required this.slug, required this.title})
       : super(key: key);
 
   @override
@@ -31,13 +33,17 @@ class _DownloadedChapterMainWidgetState
   @override
   void initState() {
     super.initState();
-    chapters = getDownloadPath(widget.slug, "").then(((value) async {
+    chapters = getComicPath(widget.title, widget.slug).then(((value) async {
       final downloadsDirectory = Directory(value);
       if (downloadsDirectory.existsSync()) {
         var list = <DownloadedChapter>[];
         for (var groupSlug in downloadsDirectory.listSync()) {
+          if (groupSlug.path.endsWith("cover.png")) {
+            continue;
+          }
           for (var chapter in Directory(groupSlug.path).listSync()) {
             final downloadedChapter = DownloadedChapter(
+                title: widget.title,
                 chap: path.basename(chapter.path),
                 comicSlug: widget.slug,
                 groupSlug: path.basename(groupSlug.path));
@@ -51,13 +57,13 @@ class _DownloadedChapterMainWidgetState
   }
 
   void removeChapter(DownloadedChapter chapter) async {
-    getDownloadPath(chapter.comicSlug, chapter.groupSlug).then(((value) {
+    getChaptersPath(chapter.title, chapter.comicSlug, chapter.groupSlug).then(((value) {
       final chapterDirectory = Directory(path.join(value, chapter.chap));
       chapterDirectory.deleteSync(recursive: true);
       chapters.then((value) {
         value.remove(chapter);
         if (value.isEmpty) {
-          getDownloadPath(chapter.comicSlug, "").then(((value) {
+          getComicPath(chapter.title, chapter.comicSlug).then(((value) {
             final downloadsDirectory = Directory(value);
             downloadsDirectory.deleteSync(recursive: true);
           }));
@@ -73,7 +79,7 @@ class _DownloadedChapterMainWidgetState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.slug),
+        title: Text(widget.title ?? widget.slug),
         centerTitle: true,
       ),
       body: Column(

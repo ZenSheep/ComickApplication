@@ -1,8 +1,9 @@
 import 'dart:io';
 
-import 'package:comick_application/chapter.dart';
-import 'package:comick_application/requests/Models/chaptersModel.dart';
-import 'package:comick_application/requests/Models/comicInformationsModel.dart';
+import 'package:comick_application/pages/chapter.dart';
+import 'package:comick_application/requests/Models/chapterDto.dart';
+import 'package:comick_application/requests/Models/comicDto.dart';
+import 'package:comick_application/requests/Models/comicInformationsChaptersDto.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as path;
 
 class ComickMainWidget extends StatefulWidget {
-  final ComicInformation comick;
+  final ComicDto comick;
 
   const ComickMainWidget({Key? key, required this.comick}) : super(key: key);
 
@@ -23,7 +24,7 @@ class ComickMainWidget extends StatefulWidget {
 }
 
 class _ComickMainWidgetState extends State<ComickMainWidget> {
-  late Future<Chapters> chapters;
+  late Future<ComicInformationsChaptersDto> chapters;
   var _currentPage = 1;
   var _totalPages = 1;
   var _favorite = false;
@@ -33,7 +34,7 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
   void initState() {
     super.initState();
     var comic = widget.comick;
-    chapters = getChaptersFromId(comic.id, _currentPage);
+    chapters = getChaptersFromSlug(comic.slug, _currentPage);
     chapters.then((value) => setState(() {
           _totalPages = value.getNumberOfPages();
         }));
@@ -122,7 +123,7 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
             ],
           ),
           Expanded(
-            child: FutureBuilder<Chapters>(
+            child: FutureBuilder<ComicInformationsChaptersDto>(
               future: chapters,
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data != null) {
@@ -131,7 +132,7 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
                     itemBuilder: (context, index) {
                       final chapter = snapshot.data!.chapters[index];
                       return ChapterCustomCard(
-                          chapter: chapter, slug: widget.comick.slug);
+                          chapter: chapter, slug: widget.comick.slug, imageUrl: imageUrl, title: widget.comick.title,);
                     },
                     separatorBuilder: (context, index) {
                       return const Divider();
@@ -165,10 +166,10 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
               setState(() {
                 _currentPage = page;
                 chapters =
-                    Future<Chapters>.value(Chapters(chapters: [], total: 0));
-                getChaptersFromId(widget.comick.id, _currentPage).then((value) {
+                    Future<ComicInformationsChaptersDto>.value(ComicInformationsChaptersDto.empty());
+                getChaptersFromSlug(widget.comick.slug, _currentPage).then((value) {
                   setState(() {
-                    chapters = Future<Chapters>.value(value);
+                    chapters = Future<ComicInformationsChaptersDto>.value(value);
                   });
                 });
               });
@@ -181,10 +182,12 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
 }
 
 class ChapterCustomCard extends StatefulWidget {
-  final Chapter chapter;
+  final ChapterDto chapter;
   final String slug;
+  final String imageUrl;
+  final String title;
 
-  const ChapterCustomCard({Key? key, required this.chapter, required this.slug})
+  const ChapterCustomCard({Key? key, required this.chapter, required this.slug, required this.imageUrl, required this.title})
       : super(key: key);
 
   @override
@@ -201,7 +204,7 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
     if (!kIsWeb) {
       path_provider.getApplicationDocumentsDirectory().then((value) {
         final directoryPath = path.join(value.path, 'downloads', widget.slug,
-            '${widget.chapter.chap} - ${widget.chapter.groupName}');
+            '${widget.chapter.chap} - ${widget.chapter.getGroupName()}');
         if (Directory(directoryPath).existsSync()) {
           setState(() {
             _downloading = 2;
@@ -251,7 +254,7 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
                         TextSpan(
                             text: widget.chapter.vol != null
                                 ? "Vol. ${widget.chapter.vol} ${widget.chapter.title != null ? ' - ${widget.chapter.title}' : ''}"
-                                : widget.chapter.title ?? ''),
+                                : widget.chapter.title),
                       ],
                     ),
                   ),
@@ -267,7 +270,7 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
                           const SizedBox(
                             width: 5,
                           ),
-                          Text("${widget.chapter.upCount}"),
+                          Text("${widget.chapter.up_count}"),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -295,7 +298,7 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
                           ),
                           Flexible(
                             child: Text(
-                              widget.chapter.groupName ?? "unknow",
+                              widget.chapter.getGroupName(),
                               textAlign: TextAlign.start,
                             ),
                           ),
@@ -338,7 +341,7 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
                                         setState(() {
                                           _downloading = 1;
                                         });
-                                        downloadChapter(widget.chapter.hid)
+                                        downloadChapter(widget.title, widget.chapter.hid, widget.slug, widget.imageUrl)
                                             .forEach((element) {
                                           setState(() {
                                             if (element == -1) {

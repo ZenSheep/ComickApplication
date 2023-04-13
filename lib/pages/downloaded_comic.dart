@@ -1,11 +1,14 @@
 import 'dart:io';
+import 'dart:ui';
 
-import 'package:comick_application/downloaded_chapter.dart';
-import 'package:comick_application/requests/Models/comicInformationsModel.dart';
+import 'package:comick_application/pages/downloaded_chapter.dart';
+import 'package:comick_application/requests/Models/comicDto.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as path;
+
+import '../requests/Models/DownloadedComic.dart';
 
 class DownloadedComicMainWidget extends StatefulWidget {
   const DownloadedComicMainWidget({Key? key}) : super(key: key);
@@ -16,7 +19,7 @@ class DownloadedComicMainWidget extends StatefulWidget {
 }
 
 class _DownloadedComicMainWidgetState extends State<DownloadedComicMainWidget> {
-  late Future<List<ComicInformations>> comics;
+  late Future<List<DownloadedComic>> comics;
 
   @override
   void initState() {
@@ -25,9 +28,9 @@ class _DownloadedComicMainWidgetState extends State<DownloadedComicMainWidget> {
         path_provider.getApplicationDocumentsDirectory().then(((value) async {
       final downloadsDirectory = Directory(path.join(value.path, 'downloads'));
       if (downloadsDirectory.existsSync()) {
-        var list = <ComicInformations>[];
+        var list = <DownloadedComic>[];
         for (var elt in downloadsDirectory.listSync()) {
-          final comic = await getComicInformations(path.basename(elt.path));
+          final comic = DownloadedComic(elt.path);
           list.add(comic);
         }
         return list;
@@ -41,7 +44,7 @@ class _DownloadedComicMainWidgetState extends State<DownloadedComicMainWidget> {
     return Column(
       children: [
         Expanded(
-          child: FutureBuilder<List<ComicInformations>>(
+          child: FutureBuilder<List<DownloadedComic>>(
             future: comics,
             builder: (context, snapshot) {
               if (snapshot.hasData && snapshot.data!.isNotEmpty) {
@@ -76,7 +79,7 @@ class _DownloadedComicMainWidgetState extends State<DownloadedComicMainWidget> {
 }
 
 class DownloadedCustomCard extends StatefulWidget {
-  final ComicInformations comic;
+  final DownloadedComic comic;
 
   const DownloadedCustomCard({Key? key, required this.comic}) : super(key: key);
 
@@ -87,17 +90,18 @@ class DownloadedCustomCard extends StatefulWidget {
 class _DownloadedCustomCardState extends State<DownloadedCustomCard> {
   @override
   Widget build(BuildContext context) {
-    final imageUrl = widget.comic.getImageUrl();
+    
+    final cover = File('${widget.comic.cover}');
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.94,
       height: MediaQuery.of(context).size.width * 0.28,
       child: GestureDetector(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          await Navigator.push(
             context,
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
-                  DownloadedChapterMainWidget(slug: widget.comic.comic.slug),
+                  DownloadedChapterMainWidget(slug: widget.comic.slug, title: widget.comic.title,),
             ),
           );
         },
@@ -116,23 +120,10 @@ class _DownloadedCustomCardState extends State<DownloadedCustomCard> {
                     minHeight: MediaQuery.of(context).size.width * 0.28,
                     maxHeight: MediaQuery.of(context).size.width * 0.28,
                   ),
-                  child: imageUrl != null
-                      ? Image.network(
-                          imageUrl,
+                  child: cover.existsSync()
+                      ? Image.file(
+                          cover,
                           fit: BoxFit.fill,
-                          loadingBuilder: (BuildContext context, Widget child,
-                              ImageChunkEvent? loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
                         )
                       : null,
                 ),
@@ -145,7 +136,7 @@ class _DownloadedCustomCardState extends State<DownloadedCustomCard> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Text(
-                        widget.comic.comic.title,
+                        widget.comic.title ?? widget.comic.slug,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

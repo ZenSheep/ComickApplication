@@ -1,27 +1,34 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:comick_application/requests/Models/chaptersModel.dart';
-import 'package:comick_application/requests/Models/comicInformationsModel.dart';
-import 'package:comick_application/requests/Models/pagesModel.dart';
-import 'package:comick_application/requests/Models/topComicModel.dart';
+import 'package:comick_application/errors/jsonParseError.dart';
+import 'package:comick_application/requests/Models/comicDto.dart';
+import 'package:comick_application/requests/Models/comicInformationsChaptersDto.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as path;
 
-Future<List<ComicInformation>> getComicsByName(String? value) async {
-  final queryParameters = {'q': value};
+import 'Models/chapterWithPagesInformationDto.dart';
+
+final baseUrl = "ec2-13-50-247-58.eu-north-1.compute.amazonaws.com:8080";
+
+Future<List<ComicDto>> getComicsByName(String? value) async {
+  final queryParameters = {'search': value};
   final response =
-      await http.get(Uri.https('api.comick.fun', '/search', queryParameters));
+      await http.get(Uri.http(baseUrl, '/comic', queryParameters));
 
   if (response.statusCode == 200) {
-    final jsonResponse = json.decode(response.body) as List<dynamic>;
-    final List<ComicInformation> comicks = [];
+    final jsonResponse = json.decode(response.body);
+    final List<ComicDto> comicks = [];
     for (var i = 0; i < jsonResponse.length; i++) {
       try {
-        var comick = ComicInformation.fromJson(jsonResponse[i]);
+        var json = jsonResponse[i] as Map<String, dynamic>;
+
+        var comick = ComicDto.fromJson(jsonResponse[i]);
         comicks.add(comick);
-      } catch (e) {}
+      } catch (e) {
+        throw Exception('Failed to parse comick');
+      }
     }
     return comicks;
   } else {
@@ -29,61 +36,57 @@ Future<List<ComicInformation>> getComicsByName(String? value) async {
   }
 }
 
-Future<Chapters> getChaptersFromId(int id, int value) async {
+Future<ComicInformationsChaptersDto> getChaptersFromSlug(String slug, int value) async {
   final queryParameters = {'page': value.toString()};
   final response = await http
-      .get(Uri.https('api.comick.fun', '/comic/$id/chapter', queryParameters));
+      .get(Uri.http(baseUrl, '/chapter/$slug', queryParameters));
 
   if (response.statusCode == 200) {
     final jsonResponse = json.decode(response.body);
-    return Chapters.fromJson(jsonResponse);
+    return ComicInformationsChaptersDto.fromJson(jsonResponse);
   } else {
     throw Exception('Failed to load comick');
   }
 }
 
-Future<Chapters> getChaptersFromSlug(String slug, int value) async {
-  var comicInformations = await getComicInformations(slug);
-  var id = comicInformations.comic.id;
-
-  return getChaptersFromId(id, value);
-}
-
-Future<Pages> getPagesFromHid(String hid) async {
-  final response = await http.get(Uri.https('api.comick.fun', '/chapter/$hid'));
+Future<ChapterWithPagesInformationDto> getPagesFromHid(String hid) async {
+  final response = await http.get(Uri.http(baseUrl, '/page/$hid'));
 
   if (response.statusCode == 200) {
     final jsonResponse = json.decode(response.body);
-    return Pages.fromJson(jsonResponse);
+    return ChapterWithPagesInformationDto.fromJson(jsonResponse);
   } else {
     throw Exception('Failed to load comick');
   }
 }
 
-Stream<double> downloadChapter(String hid) async* {
-  final response = await http.get(Uri.https('api.comick.fun', '/chapter/$hid'));
+Stream<double> downloadChapter(String title, String hid, String slug, String comicImage) async* {
+  final response = await http.get(Uri.http(baseUrl, '/page/$hid'));
 
   if (response.statusCode == 200) {
     final jsonResponse = json.decode(response.body);
-    final pages = Pages.fromJson(jsonResponse);
+    final pages = ChapterWithPagesInformationDto.fromJson(jsonResponse);
 
-    final directory = await getDownloadPath(
-        pages.chapter.mdComics.slug, pages.chapter.groupName.first);
-    final directoryPath = path.join(directory, '${pages.chapter.chap}');
+    final slugDirectory = await getComicPath(title, slug);
 
-    final mdImages = pages.chapter.mdImages;
+    final file = await downloadComicImage(comicImage, slugDirectory, "cover.png");
+    if (!file.existsSync()) {
+      yield -1;
+      return;
+    }
+
+
+    final directory = path.join(slugDirectory, pages.chapter.getGroupName());
+    final directoryPath = path.join(directory, pages.chapter.chap);
+
+    final mdImages = pages.chapter.md_images;
     for (var i = 0; i < mdImages.length; i++) {
       final element = mdImages[i];
 
       final url = element.getImageUrl();
-      final response = await http.get(Uri.parse(url));
+      final file = await downloadComicImage(url, directoryPath, "Page_$i.png");
 
-      final localPath = path.join(directoryPath, "Page_$i.png");
-
-      final imageFile = await File(localPath).create(recursive: true);
-      final resultFile = await imageFile.writeAsBytes(response.bodyBytes);
-
-      if (!resultFile.existsSync()) {
+      if (!file.existsSync()) {
         yield -1;
         return;
       }
@@ -94,32 +97,42 @@ Stream<double> downloadChapter(String hid) async* {
   }
 }
 
-Future<ComicInformations> getComicInformations(String slug) async {
-  final response = await http.get(Uri.https('api.comick.fun', '/comic/$slug'));
-  if (response.statusCode == 200) {
-    final jsonResponse = json.decode(response.body);
-    return ComicInformations.fromJson(jsonResponse);
-  } else {
-    throw Exception('Failed to load comick');
+Future<File> downloadComicImage(String imageUrl, String directory, String fileName) async {
+  final localPath = path.join(directory, fileName);
+  final localFile = File(localPath);
+  if (await localFile.exists()) {
+    return localFile;
   }
+
+  final response = await http.get(Uri.parse(imageUrl));
+  final imageFile = await localFile.create(recursive: true);
+  final file = await imageFile.writeAsBytes(response.bodyBytes);
+  return file;
 }
 
-Future<String> getDownloadPath(String? comicSlug, String? groupSlug) async {
+Future<String> getComicPath(String? title, String comicSlug) async {
   final directory = await path_provider.getApplicationDocumentsDirectory();
   final directoryPath =
-      path.join(directory.path, 'downloads', comicSlug, groupSlug);
+      path.join(directory.path, 'downloads', '${comicSlug}${title != null ? ' $title': ''}');
   return directoryPath;
 }
 
-Future<List<TopComic>> getTopComics() async {
-  final response = await http.get(Uri.https('api.comick.fun', '/top'));
+Future<String> getChaptersPath(String? title, String comicSlug, String groupSlug) async {
+  final directory = await path_provider.getApplicationDocumentsDirectory();
+  final directoryPath =
+      path.join(directory.path, 'downloads', '${comicSlug}${title != null ? ' $title': ''}', groupSlug);
+  return directoryPath;
+}
+
+Future<List<ComicDto>> getTopComics() async {
+  final response = await http.get(Uri.http(baseUrl, '/comic'));
   if (response.statusCode == 200) {
     final jsonResponse = json.decode(response.body);
-    final List<TopComic> topComics = [];
-    var jsonComics = jsonResponse["rank"];
+    final List<ComicDto> topComics = [];
+    var jsonComics = jsonResponse;
     for (var i = 0; i < jsonComics.length; i++) {
       try {
-        var topComic = TopComic.fromJson(jsonComics[i]);
+        var topComic = ComicDto.fromJson(jsonComics[i]);
         topComics.add(topComic);
       } catch (e) {}
     }

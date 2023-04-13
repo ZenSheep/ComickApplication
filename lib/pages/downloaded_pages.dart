@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:comick_application/downloaded_chapter.dart';
+import 'package:comick_application/pages/downloaded_chapter.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/foundation/key.dart';
@@ -26,7 +26,7 @@ class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
   @override
   void initState() {
     super.initState();
-    pages = getDownloadPath(widget.chapter.comicSlug, widget.chapter.groupSlug).then(((value) async {
+    pages = getChaptersPath(widget.chapter.title, widget.chapter.comicSlug, widget.chapter.groupSlug).then(((value) async {
       var list = <String>[];
       final downloadsDirectory = Directory(path.join(value, widget.chapter.chap));
       if (downloadsDirectory.existsSync())

@@ -1,12 +1,14 @@
 import 'dart:async';
 
-import 'package:comick_application/requests/Models/chaptersModel.dart';
-import 'package:comick_application/requests/Models/pagesModel.dart';
+import 'package:comick_application/requests/Models/chapterDto.dart';
+import 'package:comick_application/requests/Models/mdImageDto.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
 
+import '../requests/Models/chapterWithPagesInformationDto.dart';
+
 class ChapterMainWidget extends StatefulWidget {
-  final Chapter chapter;
+  final ChapterDto chapter;
 
   const ChapterMainWidget({Key? key, required this.chapter}) : super(key: key);
 
@@ -15,7 +17,7 @@ class ChapterMainWidget extends StatefulWidget {
 }
 
 class _ChapterMainWidgetState extends State<ChapterMainWidget> {
-  late Future<Pages> pages;
+  late Future<ChapterWithPagesInformationDto> pages;
 
   @override
   void initState() {
@@ -32,7 +34,7 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
         Column(
           children: [
             Expanded(
-              child: FutureBuilder<Pages>(
+              child: FutureBuilder<ChapterWithPagesInformationDto>(
                 future: pages,
                 builder: (context, snapshot) {
                   if (snapshot.hasData && snapshot.data != null) {
@@ -41,12 +43,12 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
                       ListView.builder(
                         shrinkWrap: true,
                         physics: const ScrollPhysics(),
-                        itemCount: data.chapter.mdImages.length,
+                        itemCount: data.chapter.md_images.length,
                         addAutomaticKeepAlives: false,
                         addRepaintBoundaries: false,
                         addSemanticIndexes: false,
                         itemBuilder: (context, index) {
-                          final page = data.chapter.mdImages[index];
+                          final page = data.chapter.md_images[index];
                           return ChapterCustomCard(page: page);
                         },
                       ),
@@ -128,7 +130,7 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
 }
 
 class ChapterCustomCard extends StatefulWidget {
-  final MdImage page;
+  final MdImageDto page;
   const ChapterCustomCard({Key? key, required this.page}) : super(key: key);
 
   @override

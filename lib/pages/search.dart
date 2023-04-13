@@ -1,9 +1,9 @@
-import 'package:comick_application/comick.dart';
-import 'package:comick_application/requests/Models/IComicModel.dart';
-import 'package:comick_application/requests/Models/comicInformationsModel.dart';
-import 'package:comick_application/requests/Models/topComicModel.dart';
+import 'package:comick_application/pages/comick.dart';
+import 'package:comick_application/requests/Models/comicDto.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
+
+import '../components/error_modal.dart';
 
 class SearchMainWidget extends StatefulWidget {
   const SearchMainWidget({Key? key}) : super(key: key);
@@ -13,7 +13,7 @@ class SearchMainWidget extends StatefulWidget {
 }
 
 class _SearchMainWidgetState extends State<SearchMainWidget> {
-  late Future<List<IComic>> comicks;
+  late Future<List<ComicDto>> comicks;
   String _searchValue = "Solo Leveling";
 
   @override
@@ -25,17 +25,17 @@ class _SearchMainWidgetState extends State<SearchMainWidget> {
   void updateSearchValue(String value) {
     setState(() {
       _searchValue = value.isEmpty ? "" : value;
-      comicks = Future<List<IComic>>.value([]);
+      comicks = Future<List<ComicDto>>.value([]);
       if (value.isEmpty) {
         getTopComics().then((value) {
           setState(() {
-            comicks = Future<List<TopComic>>.value(value);
+            comicks = Future<List<ComicDto>>.value(value);
           });
         });
       } else {
-        getComicsByName(_searchValue).then((value) {
+          getComicsByName(_searchValue).then((value) {
           setState(() {
-            comicks = Future<List<ComicInformation>>.value(value);
+            comicks = Future<List<ComicDto>>.value(value);
           });
         });
       }
@@ -56,7 +56,7 @@ class _SearchMainWidgetState extends State<SearchMainWidget> {
         children: <Widget>[
           SearchBar(updateSearchValue: updateSearchValue),
           Expanded(
-            child: FutureBuilder<List<Object>>(
+            child: FutureBuilder<List<ComicDto>>(
               future: comicks,
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.isNotEmpty) {
@@ -64,7 +64,7 @@ class _SearchMainWidgetState extends State<SearchMainWidget> {
                     itemCount: snapshot.data!.length,
                     itemBuilder: (context, index) {
                       final comick = snapshot.data![index];
-                      return SearchCustomCard(comick: comick as IComic);
+                      return SearchCustomCard(comick: comick);
                     },
                     separatorBuilder: (context, index) {
                       return const Divider();
@@ -127,7 +127,7 @@ class _SearchBarState extends State<SearchBar> {
 }
 
 class SearchCustomCard extends StatefulWidget {
-  final IComic comick;
+  final ComicDto comick;
 
   const SearchCustomCard({Key? key, required this.comick}) : super(key: key);
 
@@ -145,7 +145,6 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
       child: GestureDetector(
         onTap: () async {
           var comic = widget.comick;
-          if (comic is ComicInformation) {
             Navigator.push(
               context,
               PageRouteBuilder(
@@ -153,16 +152,6 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
                     ComickMainWidget(comick: comic),
               ),
             );
-          } else {
-            getComicInformations(widget.comick.slug)
-                .then((value) => Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                            ComickMainWidget(comick: value.comic),
-                      ),
-                    ));
-          }
         },
         child: Card(
           color: const Color(0x00fafafa),
@@ -216,7 +205,7 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        "Rating: ${widget.comick.getRate()}",
+                        "Rating: ${widget.comick.content_rating}",
                         style: const TextStyle(
                           fontSize: 14,
                         ),
