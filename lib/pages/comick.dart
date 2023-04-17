@@ -11,8 +11,9 @@ import 'package:flag/flag.dart';
 import 'package:pager/pager.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as path;
+
+import '../enums/download_state.dart';
 
 class ComickMainWidget extends StatefulWidget {
   final ComicDto comick;
@@ -195,19 +196,18 @@ class ChapterCustomCard extends StatefulWidget {
 }
 
 class _ChapterCustomCardState extends State<ChapterCustomCard> {
-  var _downloading = 0;
+  var _downloading = DownloadState.notDownloaded;
   var _percent = 0.0;
 
   @override
   void initState() {
     super.initState();
     if (!kIsWeb) {
-      path_provider.getApplicationDocumentsDirectory().then((value) {
-        final directoryPath = path.join(value.path, 'downloads', widget.slug,
-            '${widget.chapter.chap} - ${widget.chapter.getGroupName()}');
+      getChaptersPath(widget.title, widget.slug, widget.chapter.getGroupName()).then((value) {
+        final directoryPath = path.join(value, widget.chapter.chap);
         if (Directory(directoryPath).existsSync()) {
           setState(() {
-            _downloading = 2;
+            _downloading = DownloadState.downloaded;
           });
         }
       });
@@ -325,21 +325,21 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
                 child: ButtonBar(
                   alignment: MainAxisAlignment.center,
                   children: [
-                    _downloading == 1
+                    _downloading == DownloadState.downloading
                         ? CircularPercentIndicator(
                             radius: 25.0,
                             percent: _percent,
                             center: Text("${(_percent * 100).toInt()}%"),
                             progressColor: Colors.green,
                           )
-                        : _downloading == 0
+                        : _downloading == DownloadState.notDownloaded
                             ? IconButton(
                                 icon: const Icon(Icons.file_download),
                                 onPressed: kIsWeb
                                     ? null
                                     : () {
                                         setState(() {
-                                          _downloading = 1;
+                                          _downloading = DownloadState.downloading;
                                         });
                                         downloadChapter(widget.title, widget.chapter.hid, widget.slug, widget.imageUrl)
                                             .forEach((element) {
@@ -352,10 +352,10 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
                                                       const AlertDialog(
                                                           title: Text(
                                                               "Error during download")));
-                                              _downloading = 0;
+                                              _downloading = DownloadState.notDownloaded;
                                               _percent = 0.0;
                                             } else if (element == 1) {
-                                              _downloading = 2;
+                                              _downloading = DownloadState.downloaded;
                                               _percent = 0.0;
                                             } else {
                                               _percent = element;
