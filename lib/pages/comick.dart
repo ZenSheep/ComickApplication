@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 
 import '../enums/download_state.dart';
+import '../utils/storage.dart';
 
 class ComickMainWidget extends StatefulWidget {
   final ComicDto comick;
@@ -30,6 +31,7 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
   var _totalPages = 1;
   var _favorite = false;
   late Future<SharedPreferences> _preferences;
+  final _storage = Storage('comick');
 
   @override
   void initState() {
@@ -133,7 +135,7 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
                     itemBuilder: (context, index) {
                       final chapter = snapshot.data!.chapters[index];
                       return ChapterCustomCard(
-                          chapter: chapter, slug: widget.comick.slug, imageUrl: imageUrl, title: widget.comick.title,);
+                          chapter: chapter, slug: widget.comick.slug, imageUrl: imageUrl, title: widget.comick.title, storage: _storage);
                     },
                     separatorBuilder: (context, index) {
                       return const Divider();
@@ -187,8 +189,9 @@ class ChapterCustomCard extends StatefulWidget {
   final String slug;
   final String imageUrl;
   final String title;
+  final Storage storage;
 
-  const ChapterCustomCard({Key? key, required this.chapter, required this.slug, required this.imageUrl, required this.title})
+  const ChapterCustomCard({Key? key, required this.chapter, required this.slug, required this.imageUrl, required this.title, required this.storage})
       : super(key: key);
 
   @override
@@ -197,21 +200,27 @@ class ChapterCustomCard extends StatefulWidget {
 
 class _ChapterCustomCardState extends State<ChapterCustomCard> {
   var _downloading = DownloadState.notDownloaded;
+  var _isRead = false;
   var _percent = 0.0;
 
   @override
   void initState() {
     super.initState();
-    if (!kIsWeb) {
-      getChaptersPath(widget.title, widget.slug, widget.chapter.getGroupName()).then((value) {
-        final directoryPath = path.join(value, widget.chapter.chap);
-        if (Directory(directoryPath).existsSync()) {
-          setState(() {
-            _downloading = DownloadState.downloaded;
-          });
-        }
+
+    widget.storage.wasChapterRead(widget.slug, widget.chapter.getGroupName(), widget.chapter.chap).then((value) {
+      setState(() {
+        _isRead = value;
       });
-    }
+    });
+
+    getChaptersPath(widget.title, widget.slug, widget.chapter.getGroupName()).then((value) {
+      final directoryPath = path.join(value, widget.chapter.chap);
+      if (Directory(directoryPath).existsSync()) {
+        setState(() {
+          _downloading = DownloadState.downloaded;
+        });
+      }
+    });
   }
 
   @override
@@ -220,6 +229,7 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
       width: MediaQuery.of(context).size.width,
       child: GestureDetector(
         onTap: () {
+          widget.storage.setChapterRead(widget.slug, widget.chapter.getGroupName(), widget.chapter.chap);
           Navigator.push(
             context,
             PageRouteBuilder(
@@ -247,7 +257,7 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
                         TextSpan(
                             text: 'CH. ${widget.chapter.chap} ',
                             style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+                                TextStyle(fontWeight: FontWeight.bold, color: _isRead ? Colors.grey : Colors.white)),
                         if (widget.chapter.vol != null ||
                             widget.chapter.title != null)
                           const TextSpan(text: '\n'),

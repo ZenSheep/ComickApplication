@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:comick_application/pages/downloaded_pages.dart';
 import 'package:comick_application/requests/requests.dart';
+import 'package:comick_application/utils/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
@@ -29,6 +30,7 @@ class DownloadedChapterMainWidget extends StatefulWidget {
 class _DownloadedChapterMainWidgetState
     extends State<DownloadedChapterMainWidget> {
   late Future<List<DownloadedChapter>> chapters;
+  Storage storage = Storage('comick');
 
   @override
   void initState() {
@@ -94,7 +96,7 @@ class _DownloadedChapterMainWidgetState
                     itemBuilder: (context, index) {
                       final chapter = snapshot.data![index];
                       return DownloadedChapterCustomCard(
-                          chapter: chapter, removeChapter: removeChapter);
+                          chapter: chapter, removeChapter: removeChapter, storage: storage);
                     },
                     separatorBuilder: (context, index) {
                       return const Divider();
@@ -126,8 +128,10 @@ class _DownloadedChapterMainWidgetState
 class DownloadedChapterCustomCard extends StatefulWidget {
   final DownloadedChapter chapter;
   final Function removeChapter;
+  final Storage storage;
+
   const DownloadedChapterCustomCard(
-      {Key? key, required this.chapter, required this.removeChapter})
+      {Key? key, required this.chapter, required this.removeChapter, required this.storage})
       : super(key: key);
 
   @override
@@ -137,12 +141,26 @@ class DownloadedChapterCustomCard extends StatefulWidget {
 
 class _DownloadedChapterCustomCardState
     extends State<DownloadedChapterCustomCard> {
+
+  bool isRead = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.storage.wasChapterRead(widget.chapter.comicSlug, widget.chapter.groupSlug, widget.chapter.chap).then((value) {
+      setState(() {
+        isRead = value;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: MediaQuery.of(context).size.width,
       child: GestureDetector(
         onTap: () {
+          widget.storage.setChapterRead(widget.chapter.comicSlug, widget.chapter.groupSlug, widget.chapter.chap);
           Navigator.push(
             context,
             PageRouteBuilder(
@@ -162,7 +180,7 @@ class _DownloadedChapterCustomCardState
               Text(
                 'Chap. ${widget.chapter.chap} - ${widget.chapter.groupSlug}',
                 style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isRead ? Colors.grey : Colors.white),
               ),
               IconButton(
                 icon: const Icon(Icons.delete),
