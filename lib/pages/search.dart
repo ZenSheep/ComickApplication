@@ -3,8 +3,6 @@ import 'package:comick_application/requests/Models/comicDto.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
 
-import '../components/error_modal.dart';
-
 class SearchMainWidget extends StatefulWidget {
   const SearchMainWidget({Key? key}) : super(key: key);
 
@@ -13,29 +11,29 @@ class SearchMainWidget extends StatefulWidget {
 }
 
 class _SearchMainWidgetState extends State<SearchMainWidget> {
-  late Future<List<ComicDto>> comicks;
+  late Future<List<ComicDto>> comics;
   String _searchValue = "Solo Leveling";
 
   @override
   void initState() {
     super.initState();
-    comicks = getTopComics();
+    comics = getTopComics();
   }
 
   void updateSearchValue(String value) {
     setState(() {
       _searchValue = value.isEmpty ? "" : value;
-      comicks = Future<List<ComicDto>>.value([]);
+      comics = Future<List<ComicDto>>.value([]);
       if (value.isEmpty) {
         getTopComics().then((value) {
           setState(() {
-            comicks = Future<List<ComicDto>>.value(value);
+            comics = Future<List<ComicDto>>.value(value);
           });
         });
       } else {
           getComicsByName(_searchValue).then((value) {
           setState(() {
-            comicks = Future<List<ComicDto>>.value(value);
+            comics = Future<List<ComicDto>>.value(value);
           });
         });
       }
@@ -57,7 +55,7 @@ class _SearchMainWidgetState extends State<SearchMainWidget> {
           SearchBar(updateSearchValue: updateSearchValue),
           Expanded(
             child: FutureBuilder<List<ComicDto>>(
-              future: comicks,
+              future: comics,
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                   return ListView.separated(
@@ -168,7 +166,7 @@ class _SearchCustomCardState extends State<SearchCustomCard> {
                     minHeight: MediaQuery.of(context).size.width * 0.28,
                     maxHeight: MediaQuery.of(context).size.width * 0.28,
                   ),
-                  child: imageUrl != null
+                  child: imageUrl != ""
                       ? Image.network(
                           imageUrl,
                           fit: BoxFit.fill,

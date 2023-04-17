@@ -33,6 +33,9 @@ class ComicDto {
   }
 
   String getImageUrl() {
+    if (md_covers.isEmpty) {
+      return "";
+    }
     return md_covers.first.getImageUrl();
   }
 }

@@ -1,9 +1,6 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:comick_application/pages/downloaded_chapter.dart';
-import 'package:comick_application/requests/Models/comicDto.dart';
-import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as path;
@@ -91,6 +88,8 @@ class _DownloadedCustomCardState extends State<DownloadedCustomCard> {
   @override
   Widget build(BuildContext context) {
     
+    // @hack: if we remove, the app doesn't find the cover because of the spaces in the path
+    // ignore: unnecessary_string_interpolations
     final cover = File('${widget.comic.cover}');
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.94,

@@ -61,7 +61,7 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
               SizedBox(
                 height: 300,
                 width: 225,
-                child: imageUrl != null
+                child: imageUrl != ""
                     ? Image.network(
                         imageUrl,
                         fit: BoxFit.fill,

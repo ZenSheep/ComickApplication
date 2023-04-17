@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:comick_application/errors/jsonParseError.dart';
 import 'package:comick_application/requests/Models/comicDto.dart';
 import 'package:comick_application/requests/Models/comicInformationsChaptersDto.dart';
 import 'package:http/http.dart' as http;
@@ -10,7 +9,7 @@ import 'package:path/path.dart' as path;
 
 import 'Models/chapterWithPagesInformationDto.dart';
 
-final baseUrl = "ec2-13-50-247-58.eu-north-1.compute.amazonaws.com:8080";
+const baseUrl = "ec2-13-50-247-58.eu-north-1.compute.amazonaws.com:8080";
 
 Future<List<ComicDto>> getComicsByName(String? value) async {
   final queryParameters = {'search': value};
@@ -19,18 +18,16 @@ Future<List<ComicDto>> getComicsByName(String? value) async {
 
   if (response.statusCode == 200) {
     final jsonResponse = json.decode(response.body);
-    final List<ComicDto> comicks = [];
+    final List<ComicDto> comics = [];
     for (var i = 0; i < jsonResponse.length; i++) {
       try {
-        var json = jsonResponse[i] as Map<String, dynamic>;
-
         var comick = ComicDto.fromJson(jsonResponse[i]);
-        comicks.add(comick);
+        comics.add(comick);
       } catch (e) {
         throw Exception('Failed to parse comick');
       }
     }
-    return comicks;
+    return comics;
   } else {
     throw Exception('Failed to load comick');
   }
@@ -113,14 +110,14 @@ Future<File> downloadComicImage(String imageUrl, String directory, String fileNa
 Future<String> getComicPath(String? title, String comicSlug) async {
   final directory = await path_provider.getApplicationDocumentsDirectory();
   final directoryPath =
-      path.join(directory.path, 'downloads', '${comicSlug}${title != null ? ' $title': ''}');
+      path.join(directory.path, 'downloads', '$comicSlug${title != null ? ' $title': ''}');
   return directoryPath;
 }
 
 Future<String> getChaptersPath(String? title, String comicSlug, String groupSlug) async {
   final directory = await path_provider.getApplicationDocumentsDirectory();
   final directoryPath =
-      path.join(directory.path, 'downloads', '${comicSlug}${title != null ? ' $title': ''}', groupSlug);
+      path.join(directory.path, 'downloads', '$comicSlug${title != null ? ' $title': ''}', groupSlug);
   return directoryPath;
 }
 
@@ -134,7 +131,9 @@ Future<List<ComicDto>> getTopComics() async {
       try {
         var topComic = ComicDto.fromJson(jsonComics[i]);
         topComics.add(topComic);
-      } catch (e) {}
+      } catch (e) {
+        throw Exception('Failed to parse comick');
+      }
     }
     return topComics;
   } else {

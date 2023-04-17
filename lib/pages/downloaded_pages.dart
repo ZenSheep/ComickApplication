@@ -3,9 +3,6 @@ import 'dart:io';
 import 'package:comick_application/pages/downloaded_chapter.dart';
 import 'package:comick_application/requests/requests.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as path;
 
 
