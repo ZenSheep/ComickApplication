@@ -2,13 +2,15 @@ import 'dart:io';
 
 import 'package:comick_application/pages/downloaded_chapter.dart';
 import 'package:comick_application/requests/requests.dart';
+import 'package:comick_application/utils/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
 
 class DownloadedPagesMainWidget extends StatefulWidget {
   final DownloadedChapter chapter;
-  const DownloadedPagesMainWidget({Key? key, required this.chapter}) : super(key: key);
+  final Storage storage;
+  const DownloadedPagesMainWidget({Key? key, required this.chapter, required this.storage}) : super(key: key);
 
   @override
   State<DownloadedPagesMainWidget> createState() => _DownloadedPagesMainWidgetState();
@@ -61,6 +63,8 @@ class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
                   future: pages,
                   builder: (context, snapshot) {
                     if (snapshot.hasData && snapshot.data != null) {
+                      widget.storage.setChapterRead(widget.chapter.comicSlug, widget.chapter.groupSlug, widget.chapter.chap);
+
                       final data = snapshot.data!;
                       return ListView(
                         children: [

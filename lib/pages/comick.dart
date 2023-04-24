@@ -31,7 +31,13 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
   var _totalPages = 1;
   var _favorite = false;
   late Future<SharedPreferences> _preferences;
-  final _storage = Storage('comick');
+  Storage _storage = Storage('comick');
+
+  void resetStorage() {
+    setState(() {
+      _storage = Storage('comick');
+    });
+  }
 
   @override
   void initState() {
@@ -135,7 +141,7 @@ class _ComickMainWidgetState extends State<ComickMainWidget> {
                     itemBuilder: (context, index) {
                       final chapter = snapshot.data!.chapters[index];
                       return ChapterCustomCard(
-                          chapter: chapter, slug: widget.comick.slug, imageUrl: imageUrl, title: widget.comick.title, storage: _storage);
+                          chapter: chapter, slug: widget.comick.slug, imageUrl: imageUrl, title: widget.comick.title, storage: _storage, resetStorage: resetStorage,);
                     },
                     separatorBuilder: (context, index) {
                       return const Divider();
@@ -190,8 +196,9 @@ class ChapterCustomCard extends StatefulWidget {
   final String imageUrl;
   final String title;
   final Storage storage;
+  final VoidCallback resetStorage;
 
-  const ChapterCustomCard({Key? key, required this.chapter, required this.slug, required this.imageUrl, required this.title, required this.storage})
+  const ChapterCustomCard({Key? key, required this.chapter, required this.slug, required this.imageUrl, required this.title, required this.storage, required this.resetStorage})
       : super(key: key);
 
   @override
@@ -229,14 +236,13 @@ class _ChapterCustomCardState extends State<ChapterCustomCard> {
       width: MediaQuery.of(context).size.width,
       child: GestureDetector(
         onTap: () {
-          widget.storage.setChapterRead(widget.slug, widget.chapter.getGroupName(), widget.chapter.chap);
           Navigator.push(
             context,
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
-                  ChapterMainWidget(chapter: widget.chapter),
+                  ChapterMainWidget(chapter: widget.chapter, slug: widget.slug, storage: widget.storage),
             ),
-          );
+          ).then((value) => setState(() { widget.resetStorage(); }));
         },
         child: Card(
           color: const Color(0x00fafafa),

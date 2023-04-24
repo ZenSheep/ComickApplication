@@ -32,6 +32,12 @@ class _DownloadedChapterMainWidgetState
   late Future<List<DownloadedChapter>> chapters;
   Storage storage = Storage('comick');
 
+  void resetStorage() {
+    setState(() {
+      storage = Storage('comick');
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -96,7 +102,7 @@ class _DownloadedChapterMainWidgetState
                     itemBuilder: (context, index) {
                       final chapter = snapshot.data![index];
                       return DownloadedChapterCustomCard(
-                          chapter: chapter, removeChapter: removeChapter, storage: storage);
+                          chapter: chapter, removeChapter: removeChapter, storage: storage, resetStorage: resetStorage,);
                     },
                     separatorBuilder: (context, index) {
                       return const Divider();
@@ -129,9 +135,10 @@ class DownloadedChapterCustomCard extends StatefulWidget {
   final DownloadedChapter chapter;
   final Function removeChapter;
   final Storage storage;
+  final VoidCallback resetStorage;
 
   const DownloadedChapterCustomCard(
-      {Key? key, required this.chapter, required this.removeChapter, required this.storage})
+      {Key? key, required this.chapter, required this.removeChapter, required this.storage, required this.resetStorage})
       : super(key: key);
 
   @override
@@ -160,16 +167,16 @@ class _DownloadedChapterCustomCardState
       width: MediaQuery.of(context).size.width,
       child: GestureDetector(
         onTap: () {
-          widget.storage.setChapterRead(widget.chapter.comicSlug, widget.chapter.groupSlug, widget.chapter.chap);
           Navigator.push(
             context,
             PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) {
               return DownloadedPagesMainWidget(
                 chapter: widget.chapter,
+                storage: widget.storage,
               );
             }),
-          );
+          ).then((value) => setState(() { widget.resetStorage(); }));
         },
         child: Card(
           color: const Color(0x00fafafa),

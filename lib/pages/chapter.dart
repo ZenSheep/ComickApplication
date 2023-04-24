@@ -3,14 +3,17 @@ import 'dart:async';
 import 'package:comick_application/requests/Models/chapterDto.dart';
 import 'package:comick_application/requests/Models/mdImageDto.dart';
 import 'package:comick_application/requests/requests.dart';
+import 'package:comick_application/utils/storage.dart';
 import 'package:flutter/material.dart';
 
 import '../requests/Models/chapterWithPagesInformationDto.dart';
 
 class ChapterMainWidget extends StatefulWidget {
   final ChapterDto chapter;
+  final Storage storage;
+  final String slug;
 
-  const ChapterMainWidget({Key? key, required this.chapter}) : super(key: key);
+  const ChapterMainWidget({Key? key, required this.chapter, required this.storage, required this.slug}) : super(key: key);
 
   @override
   State<ChapterMainWidget> createState() => _ChapterMainWidgetState();
@@ -38,6 +41,8 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
                 future: pages,
                 builder: (context, snapshot) {
                   if (snapshot.hasData && snapshot.data != null) {
+                    widget.storage.setChapterRead(widget.slug, widget.chapter.getGroupName(), widget.chapter.chap);
+
                     final data = snapshot.data!;
                     return ListView(children: [
                       ListView.builder(
