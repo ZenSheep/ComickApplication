@@ -41,7 +41,7 @@ class ChapterDto {
       updated_at: format.parse(json["updated_at"]),
       up_count: json["up_count"],
       down_count: json["down_count"],
-      group_name: (json["group_name"] as List<dynamic>).map((e) => e as String).toList(),
+      group_name: json["group_name"] == null ? null : (json["group_name"] as List<dynamic>).map((e) => e as String).toList(),
       hid: json["hid"],
     );
   }
