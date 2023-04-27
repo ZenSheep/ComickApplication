@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:comick_application/pages/downloaded_chapter.dart';
@@ -39,7 +40,7 @@ class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
       if (chaptersDirectory.existsSync())
       {
         final chaptersList = chaptersDirectory.listSync().map((e) => path.basename(e.path)).toList();
-        chaptersList.sort((a, b) => a.compareTo(b));
+        chaptersList.sort((a, b) => (int.parse(a).compareTo(int.parse(b))));
         final chapterIndex = chaptersList.indexOf(widget.chapter.chap);
         setState(() {
           _currentIndex = chapterIndex;
