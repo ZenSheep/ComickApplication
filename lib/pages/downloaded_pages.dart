@@ -21,6 +21,7 @@ class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
   List<String> _chapters = [];
   int? _currentIndex;
   late Directory _chaptersDirectory;
+  late String chap = widget.chapter.chap;
 
   @override
   void initState() {
@@ -44,6 +45,7 @@ class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
           _currentIndex = chapterIndex;
           _chapters = chaptersList;
           _chaptersDirectory = chaptersDirectory;
+          chap = widget.chapter.chap;
         });
       }
       return list;
@@ -63,7 +65,7 @@ class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
                   future: pages,
                   builder: (context, snapshot) {
                     if (snapshot.hasData && snapshot.data != null) {
-                      widget.storage.setChapterRead(widget.chapter.comicSlug, widget.chapter.groupSlug, widget.chapter.chap);
+                      widget.storage.setChapterRead(widget.chapter.comicSlug, widget.chapter.groupSlug, chap);
 
                       final data = snapshot.data!;
                       return ListView(
@@ -98,6 +100,7 @@ class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
                                       }
                                       setState(() {
                                         pages = Future.value(list);
+                                        chap = _chapters[_currentIndex! - 1];
                                         _currentIndex = _currentIndex! - 1;
                                       });
                                     },
@@ -121,6 +124,7 @@ class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
                                       }
                                       setState(() {
                                         pages = Future.value(list);
+                                        chap = _chapters[_currentIndex! + 1];
                                         _currentIndex = _currentIndex! + 1;
                                       });
                                     },

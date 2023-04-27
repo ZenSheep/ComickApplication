@@ -21,11 +21,13 @@ class ChapterMainWidget extends StatefulWidget {
 
 class _ChapterMainWidgetState extends State<ChapterMainWidget> {
   late Future<ChapterWithPagesInformationDto> pages;
+  late String? chap;
 
   @override
   void initState() {
     super.initState();
     pages = getPagesFromHid(widget.chapter.hid);
+    chap = widget.chapter.chap;
   }
 
   @override
@@ -41,9 +43,10 @@ class _ChapterMainWidgetState extends State<ChapterMainWidget> {
                 future: pages,
                 builder: (context, snapshot) {
                   if (snapshot.hasData && snapshot.data != null) {
-                    widget.storage.setChapterRead(widget.slug, widget.chapter.getGroupName(), widget.chapter.chap);
-
                     final data = snapshot.data!;
+
+                    widget.storage.setChapterRead(widget.slug, widget.chapter.getGroupName(), data.chapter.chap);
+
                     return ListView(children: [
                       ListView.builder(
                         shrinkWrap: true,
