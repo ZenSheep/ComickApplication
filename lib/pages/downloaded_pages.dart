@@ -40,7 +40,7 @@ class _DownloadedPagesMainWidgetState extends State<DownloadedPagesMainWidget> {
       if (chaptersDirectory.existsSync())
       {
         final chaptersList = chaptersDirectory.listSync().map((e) => path.basename(e.path)).toList();
-        chaptersList.sort((a, b) => (int.parse(a).compareTo(int.parse(b))));
+        chaptersList.sort((a, b) => (double.parse(a).compareTo(double.parse(b))));
         final chapterIndex = chaptersList.indexOf(widget.chapter.chap);
         setState(() {
           _currentIndex = chapterIndex;
