@@ -68,7 +68,7 @@ class ChapterDto {
 
   String getGroupName() {
     if (group_name == null || group_name!.isEmpty) {
-      return '';
+      return 'unknown';
     }
     return group_name!.first;
   }
